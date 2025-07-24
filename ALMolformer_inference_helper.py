@@ -6,7 +6,8 @@ import pickle
 import torch
 import os
 import sys
-sys.path.append('/groups/cherkasvgrp/Student_backup/mkpandey/My_Projects/DDSgroups/VinaAL')
+#sys.path.append('/groups/cherkasvgrp/Student_backup/mkpandey/My_Projects/DDSgroups/VinaAL')
+sys.path.append('/groups/cherkasvgrp/tsajed/ddlight')
 from ALHelpers_molformer import initialize_model, run_inference_scatter
 
 def main(seed_idx, used_zinc_ids, iteration_dir, config):

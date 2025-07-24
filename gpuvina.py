@@ -1010,7 +1010,7 @@ def get_vina_scores_mul_gpu(smiles_list, cursor, config, num_gpus=1, output_dir=
 #SBATCH --ntasks=1
 #SBATCH --time=102:00:00
 
-source ~/anaconda3/etc/profile.d/conda.sh
+source ~/miniconda3/etc/profile.d/conda.sh
 conda activate dds 
 
 python run_vina.py --smiles_file {chunk_file} --output_file {result_file} --gpu_id {gpu_id} --target {config.global_params.target}

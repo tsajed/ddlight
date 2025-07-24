@@ -1,7 +1,8 @@
 import pandas as pd
 import torch
 import sys
-sys.path.append('/groups/cherkasvgrp/Student_backup/mkpandey/My_Projects/DDSgroups/VinaAL')
+#sys.path.append('/groups/cherkasvgrp/Student_backup/mkpandey/My_Projects/DDSgroups/VinaAL')
+sys.path.append('/groups/cherkasvgrp/tsajed/ddlight')
 from gpuvina import get_vina_scores_mul_gpu#, QuickVina2GPU
 from easydict import EasyDict
 import yaml
@@ -12,7 +13,7 @@ def sort_by_pred_proba(
 ) -> List[Tuple[str, str, float]]:
     return sorted(mol_list, key=lambda x: x[2], reverse=True)
 
-with open('/groups/cherkasvgrp/Student_backup/mkpandey/My_Projects/DDSgroups/config/params.yml', 'r') as f:
+with open('configs/params.yml', 'r') as f:
     config = EasyDict(yaml.safe_load(f))
 
 def get_topK_mols(all_docked_mols, all_virtual_hits, config, topK=1000, dock_tolerance = 0.1):

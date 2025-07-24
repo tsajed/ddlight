@@ -9,7 +9,8 @@ from imblearn.over_sampling import RandomOverSampler
 from collections import Counter
 import torch
 import sys
-sys.path.append('/groups/cherkasvgrp/Student_backup/mkpandey/My_Projects/DDSgroups/VinaAL')
+#sys.path.append('/groups/cherkasvgrp/Student_backup/mkpandey/My_Projects/DDSgroups/VinaAL')
+sys.path.append('/groups/cherkasvgrp/tsajed/ddlight')
 from gpuvina import get_vina_scores_mul_gpu, QuickVina2GPU
 from glide_dock import get_glide_scores_mul_gpu
 from graph_dataset import MolFormerDataset
@@ -121,9 +122,9 @@ def write_inf_helper_script(iteration_dir, config):
 #SBATCH --gres=gpu:1
 #SBATCH --mem=20000M
 #SBATCH -o {iteration_dir}/inference_%A_%a.out
-source ~/anaconda3/etc/profile.d/conda.sh
+source ~/miniconda3/etc/profile.d/conda.sh
 conda activate {config.global_params.env_name}
-python {config.global_params.code_path}/VinaAL/Experiments/ALMolformer_inference_helper.py $SLURM_ARRAY_TASK_ID {iteration_dir} {config.global_params.project_path}/{config.global_params.project_name}/config.pkl
+python ALMolformer_inference_helper.py $SLURM_ARRAY_TASK_ID {iteration_dir} {config.global_params.project_path}/{config.global_params.project_name}/config.pkl
     """
     #{config.global_params.code_path}/config/params.yml
     script_file = os.path.join(iteration_dir,f'parallel_inf.sh')  # sdf_dir.rsplit('/', 2)[0] + '/'    #os.path.join(sdf_dir, f'{name}_conf.sh') #
@@ -331,7 +332,7 @@ def run_first_iteration(config, total_size, molecule_df, used_zinc_ids, smiles_2
             "dock_labels": test_labels
         }
     }
-    with open('/groups/cherkasvgrp/Student_backup/mkpandey/My_Projects/DDSgroups/VinaAL/Experiments/it0data.pkl','wb') as f:
+    with open('dataset/it0data.pkl','wb') as f:
         pickle.dump(data_dict,f)
     return EasyDict(data_dict), used_zinc_ids
 
@@ -1276,7 +1277,7 @@ def run_subsequent_iterations_mul_gpu(initial_model, molecule_df, dd_cutoff, it0
                               rank, world_size, smiles_2_dockscore_gt=None, tokenizer = None, val_proba = None, val_labels = None):
     
     import wandb
-    wandb.login(key= '50c4542f2f5338f2591116005f2e2c8bd9f4d6d6')
+    wandb.login()
     
     """
     Executes an active learning loop over a large molecule dataset, iteratively acquiring 
@@ -1315,7 +1316,7 @@ def run_subsequent_iterations_mul_gpu(initial_model, molecule_df, dd_cutoff, it0
         cutoff_fn_al = VirtHitsCutoff(cutoff_percent=1)
         dd_cutoff = it0cutoff = cutoff_fn_al.getCutoff(it0_data.train.dock_scores, fixed = False) #prev_dd_cutoff
 
-    with wandb.init(project = 'DDS_AL_2M_AllTgt', dir = '/groups/cherkasvgrp/Student_backup/mkpandey/My_Projects/DDSgroups/VinaAL/wandb',
+    with wandb.init(project = 'DDS_AL_2M_AllTgt',
                     config = config, mode = None): #None
         print(wandb.run.id, wandb.run.name)
         wandb.run.name=f'{config.global_params.model_architecture}_{config.global_params.target}_{config.al_params.acquisition_function}_dropDB{config.al_params.drop_db}_fxcut{config.threshold_params.fixed_cutoff}_{wandb.run.name}'

@@ -24,7 +24,7 @@ from ALHelpers_molformer import (load_smiles_dockscore,
     filter_data_by_dockscore, save_docking_scores, run_first_iteration,
     initialize_model, prepare_datasets, VirtHitsCutoff, run_subsequent_iterations_mul_gpu)
 import wandb
-wandb.login()
+wandb.login(key="27f458bdad899ca70cdd866458b86f4f423d0054")
 
 
 # Utility functions

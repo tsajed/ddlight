@@ -15,13 +15,13 @@ global_params:
   # descriptor_dir: '/groups/cherkasvgrp/Student_backup/mkpandey/My_Projects/DDSgroups/data/preprocessed/descriptors'
   schrodinger_path: '/groups/cherkasvgrp/schrodinger' # Path to the schrodinger installation; fixed in our lab
   # consolidated_fp_path: '/groups/cherkasvgrp/Student_backup/mkpandey/My_Projects/DDSgroups/data/preprocessed/descriptors/consolidated_ECFP6_75M.pkl'
-  # env_name: 'dds'
+  env_name: 'dds'
   loss: 'crossentropy' # focal loss
 al_params:
   acquisition_function: 'bald' #"unc" # #least_confidence #'random' # "entropy", "least_confidence", "margin", "greedy", "ucb", .
   initial_budget: 20000 #00 #20000 #10000 #1000000 # First round of iterations
   al_budget: 100 #00 #10000 # 1000 # Number of molecules to acquire at each iteration
-  n_iterations: 30 # Number of active learning iterations
+  n_iterations: 2 # Number of active learning iterations
   model_retrain: False #True # whether to transfer learn or retrain from scratch; comment out in prod
   test_rand_samples: False # At every iteration, do you want to randomly choose molecules to test docking score
   drop_db : True # Iteratively making the dataset more manageable. Drop most informative inactives
@@ -29,7 +29,7 @@ al_params:
 model_hps:
   num_gpus: 51 # Parallel training on num gpus
   num_layers: 6 # Number of layers in the model
-  n_epochs: 40 # Number of epochs to train the model
+  n_epochs: 1 # Number of epochs to train the model
   lr:  0.0001 #0.000001 # 0.0001
   batch_size: 2048 # Batch size for training
   optimizer: "adam" # Optimizer

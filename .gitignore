@@ -7,3 +7,4 @@ __pycache__
 *.err
 *.log
 *.txt 
+wandb/
