@@ -13,6 +13,7 @@ from tqdm import tqdm
 # from synflownet.tasks.config import VinaConfig
 import pickle
 import time
+import uuid
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 logger = RDLogger.logger()
@@ -602,6 +603,11 @@ class QuickVina2GPU(object):
 
         if input_dir is None:
             input_dir = tempfile.mkdtemp()
+        else:
+            temp_id   = uuid.uuid4().hex[:8]
+            input_dir   = os.path.join(input_dir, temp_id)
+            os.makedirs(input_dir, exist_ok=True) 
+
         self.input_dir = input_dir
         self.out_dir = input_dir + "_out"
 
@@ -627,7 +633,7 @@ class QuickVina2GPU(object):
         config.append(f"size_z = {self.size_z}")
         config.append(f"thread = {self.thread}")
 
-        with open(os.path.join(self.input_dir, "../config.txt"), "w") as f:
+        with open(os.path.join(self.input_dir, "config.txt"), "w") as f:
             f.write("\n".join(config))
         # print(os.path.join(self.input_dir, "../config.txt"))
         # print(config)
@@ -650,11 +656,11 @@ class QuickVina2GPU(object):
                 print(f"Failed to write pdbqt file: {e}")
 
     def _teardown(self):
-
         # Remove input files
-        for file in os.listdir(self.input_dir):
-            os.remove(os.path.join(self.input_dir, file))
-        os.rmdir(self.input_dir)
+        if os.path.exists(self.input_dir): 
+            for file in os.listdir(self.input_dir):
+                os.remove(os.path.join(self.input_dir, file))
+            os.rmdir(self.input_dir)
 
         # Remove output files
         if os.path.exists(self.out_dir):
@@ -665,7 +671,7 @@ class QuickVina2GPU(object):
     def _run_vina(self):
 
         result = subprocess.run(
-            [self.vina_path, "--config", os.path.join(self.input_dir, "../config.txt")], capture_output=True, text=True
+            [self.vina_path, "--config", os.path.join(self.input_dir, "config.txt")], capture_output=True, text=True
         )
         if self.print_time:
             print(result.stdout.split("\n")[-2])
@@ -1013,7 +1019,7 @@ def get_vina_scores_mul_gpu(smiles_list, cursor, config, num_gpus=1, output_dir=
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate dds 
 
-python run_vina.py --smiles_file {chunk_file} --output_file {result_file} --gpu_id {gpu_id} --target {config.global_params.target}
+python run_vina.py --smiles_file {chunk_file} --output_file {result_file} --gpu_id {gpu_id} --target {config.global_params.target} --input_dir {config.global_params.dock_logs_path}
 """)
         
         # Submit the Slurm job

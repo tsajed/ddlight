@@ -123,6 +123,9 @@ def main(rank, world_size):
     base_path = f"{config.global_params.project_path}/{config.global_params.project_name}"
     os.makedirs(base_path, exist_ok=True)
 
+    with open(base_path+'/config.pkl','wb') as f:
+        pickle.dump(config,f)
+
     # Load data
     target = config.global_params.target
     if target in ['jak2', 'braf', 'parp1','fa7', '5ht1b']:

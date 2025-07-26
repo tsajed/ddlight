@@ -8,11 +8,13 @@ def main():
     parser.add_argument("--output_file", type=str, required=True, help="Path to the output file.")
     parser.add_argument("--gpu_id", type=int, required=True, help="GPU ID to use.")
     parser.add_argument("--target", type=str, required=True, help="PDB ID")
+    parser.add_argument("--input_dir", type=str, required=False, default=None, help="The output Directory")
     args = parser.parse_args()
 
     # Initialize Vina
     vina = QuickVina2GPU(vina_path="/groups/cherkasvgrp/Vina-GPU-2.1/QuickVina2-GPU-2.1/QuickVina2-GPU-2-1", #QuickVina2-GPU-2-1"', # Avoiding global initialization because _teardown deletes tmp dirs
-                        target=args.target)
+                        target=args.target,
+                        input_dir=args.input_dir)
 
     # Read SMILES
     with open(args.smiles_file, "r") as f:

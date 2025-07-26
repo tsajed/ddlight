@@ -17,6 +17,7 @@ global_params:
   # consolidated_fp_path: '/groups/cherkasvgrp/Student_backup/mkpandey/My_Projects/DDSgroups/data/preprocessed/descriptors/consolidated_ECFP6_75M.pkl'
   env_name: 'dds'
   loss: 'crossentropy' # focal loss
+  dock_logs_path: '/groups/cherkasvgrp/tsajed/ddlight/dock_logs'
 al_params:
   acquisition_function: 'bald' #"unc" # #least_confidence #'random' # "entropy", "least_confidence", "margin", "greedy", "ucb", .
   initial_budget: 20000 #00 #20000 #10000 #1000000 # First round of iterations
