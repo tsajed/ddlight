@@ -1,0 +1,10 @@
+logs
+__pycache__
+*.pkl
+*.csv
+*.json
+*.out
+*.err
+*.log
+*.txt 
+wandb/
