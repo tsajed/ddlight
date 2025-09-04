@@ -140,7 +140,7 @@ def main(rank, world_size):
             molecule_df = pickle.load(f)
         with open('/groups/cherkasvgrp/Student_backup/mkpandey/My_Projects/DDSgroups/data/lsd_dock_mpro/smiles_2_dockscore_gt.pkl','rb') as f:
             smiles_2_dockscore_gt = pickle.load(f)
-    smiles_2_dockscore_gt = dict(zip(molecule_df["smiles"], molecule_df[f"{target}_dockscores"])) # If this uncommented, then no docking, things will be fast. If this commented out, it will dock everytime
+    # smiles_2_dockscore_gt = dict(zip(molecule_df["smiles"], molecule_df[f"{target}_dockscores"])) # If this uncommented, then no docking, things will be fast. If this commented out, it will dock everytime
     
     used_zinc_ids = set()
     # Run first iteration
