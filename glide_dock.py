@@ -268,7 +268,8 @@ def run_docking_job(iteration, num_cpus, project_path, project_name, schrodinger
     njobs = num_cpus // 3 if iteration ==0 else num_cpus
     prepare_glide(project_name,project_path,grid_file,iteration,glide_input_template)
     run_glide(project_path, project_name, iteration, schrodinger_path, njobs)
-    while 'phase_3' in subprocess.getoutput('squeue -u mkpandey -h -o "%j"'): time.sleep(10)
+    output = subprocess.check_output(["squeue", "-u", "$(whoami)"], shell=True).decode("utf-8").strip()
+    while 'phase_3' in output: time.sleep(10)
     extract_labels(project_path,project_name,iteration,"glide")
 
 
