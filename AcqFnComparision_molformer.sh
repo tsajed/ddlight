@@ -12,4 +12,4 @@ source ~/miniconda3/etc/profile.d/conda.sh
 conda activate dds
 
 # Run the Python script with the seed_idx argument as SLURM_ARRAY_TASK_ID
-python AcqFnComparision_molformer.py configs/params.yml
+python -u AcqFnComparision_molformer.py configs/params.yml

@@ -124,7 +124,7 @@ def write_inf_helper_script(iteration_dir, config):
 #SBATCH -o {iteration_dir}/inference_%A_%a.out
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate {config.global_params.env_name}
-python ALMolformer_inference_helper.py $SLURM_ARRAY_TASK_ID {iteration_dir} {config.global_params.project_path}/{config.global_params.project_name}/config.pkl
+python ~/phd/ddlight/ALMolformer_inference_helper.py $SLURM_ARRAY_TASK_ID {iteration_dir} {config.global_params.project_path}/{config.global_params.project_name}/config.pkl
     """
     #{config.global_params.code_path}/config/params.yml
     script_file = os.path.join(iteration_dir,f'parallel_inf.sh')  # sdf_dir.rsplit('/', 2)[0] + '/'    #os.path.join(sdf_dir, f'{name}_conf.sh') #
@@ -243,7 +243,7 @@ def run_first_iteration(config, total_size, molecule_df, used_zinc_ids, smiles_2
         fingerprint = False
     train_batch,used_zinc_ids = fetch_random_batch(total_size, molecule_df, used_zinc_ids, init_acq=True, fingerprint=fingerprint, tokenizer = tokenizer)
     val_batch,used_zinc_ids = fetch_random_batch(50000, molecule_df, used_zinc_ids, init_acq= True, fingerprint=fingerprint, tokenizer=tokenizer)
-    test_batch,used_zinc_ids = fetch_random_batch(100000, molecule_df, used_zinc_ids, init_acq=True, fingerprint=fingerprint, tokenizer=tokenizer)
+    test_batch,used_zinc_ids = fetch_random_batch(50000, molecule_df, used_zinc_ids, init_acq=True, fingerprint=fingerprint, tokenizer=tokenizer)
     
     print("First Iteration:")
     print(f"Train Batch Size: {len(train_batch[0])}")
@@ -332,6 +332,7 @@ def run_first_iteration(config, total_size, molecule_df, used_zinc_ids, smiles_2
             "dock_labels": test_labels
         }
     }
+    os.makedirs("dataset", exist_ok=True)
     with open('dataset/it0data.pkl','wb') as f:
         pickle.dump(data_dict,f)
     return EasyDict(data_dict), used_zinc_ids
@@ -923,7 +924,8 @@ def run_subsequent_iterations_mul_gpu(initial_model, molecule_df, dd_cutoff, it0
                     batches = EasyDict({'train':EasyDict({'smiles':[item[1] for item in new_data],
                                                   'libID':[item[0] for item in new_data]}),
                                         })
-                    train_dock_scores, val_dock_scores, test_dock_scores = get_glide_scores_mul_gpu(batches, 0, config)
+                    #train_dock_scores, val_dock_scores, test_dock_scores = get_glide_scores_mul_gpu(batches, 0, config)
+                    new_docking_scores, _, _ = get_glide_scores_mul_gpu(batches, 0, config)
                     
             new_docking_scores = [smiles_2_dockscore_gt[item[1]] for item in new_data] if smiles_2_dockscore_gt else new_docking_scores
             if config.global_params.model_architecture in ('mlp3K','mlpTx'):

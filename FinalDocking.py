@@ -1,9 +1,9 @@
 import pandas as pd
 import torch
 import sys
-#sys.path.append('/groups/cherkasvgrp/Student_backup/mkpandey/My_Projects/DDSgroups/VinaAL')
 sys.path.append('/groups/cherkasvgrp/tsajed/ddlight')
 from gpuvina import get_vina_scores_mul_gpu#, QuickVina2GPU
+from glide_dock import get_glide_scores_mul_gpu
 from easydict import EasyDict
 import yaml
 from typing import List, Tuple
@@ -13,7 +13,7 @@ def sort_by_pred_proba(
 ) -> List[Tuple[str, str, float]]:
     return sorted(mol_list, key=lambda x: x[2], reverse=True)
 
-with open('configs/params.yml', 'r') as f:
+with open('/home/tsajed/phd/ddlight/configs/params.yml', 'r') as f:
     config = EasyDict(yaml.safe_load(f))
 
 def get_topK_mols(all_docked_mols, all_virtual_hits, config, topK=1000, dock_tolerance = 0.1):
@@ -33,9 +33,16 @@ def get_topK_mols(all_docked_mols, all_virtual_hits, config, topK=1000, dock_tol
     # dock top virt hits 
     dock_mol_ids = [mol[0] for mol in top_virt_hits]
     dock_smiles_list = [mol[1] for mol in top_virt_hits]
-    dock_scores = get_vina_scores_mul_gpu(dock_smiles_list, None, config, num_gpus=config.model_hps.num_gpus, 
-                                        output_dir=f"{config.global_params.project_path}/{config.global_params.project_name}/final_docking/",
-                                        dockscore_gt=None)
+    if config.global_params.dock_pgm =='vina':
+        dock_scores = get_vina_scores_mul_gpu(dock_smiles_list, None, config, num_gpus=config.model_hps.num_gpus, 
+                                            output_dir=f"{config.global_params.project_path}/{config.global_params.project_name}/final_docking/",
+                                            dockscore_gt=None)
+    elif config.global_params.dock_pgm == 'glide':
+        batches = EasyDict({'train':EasyDict({'smiles':dock_smiles_list,
+                                            'libID':dock_mol_ids}),
+                                })
+        dock_scores, _, _ = get_glide_scores_mul_gpu(batches, 0, config)
+                
     top_virt_result = [(m,s,d) for m,s,d in zip(dock_mol_ids,dock_smiles_list, dock_scores)]
     # Combine both and sort by docking score
     combined = result + top_virt_result
