@@ -756,7 +756,7 @@ def get_val_data_from_av_df(molecule_df, used_zinc_ids, tokenizer, config, itera
         # dense_fp = tokenizer(smiles_list, padding=True, truncation=True, return_tensors="pt")
     elif config.global_params.model_architecture in ('advanced_molformer'):
         dense_fp = tokenizer(smiles_list, padding=True, truncation=True, return_tensors="pt")
-    if config.global_params.target in ['jak2', 'braf', 'parp1','fa7', '5ht1b']:
+    if config.global_params.target in ['jak2', 'braf', 'parp1','fa7', '5ht1b', 'pgk1', 'pgk2']:
         docking_scores = get_vina_scores_mul_gpu(smiles_list, molecule_df, config, num_gpus=config.model_hps.num_gpus, 
                                                             output_dir=f"{config.global_params.project_path}/{config.global_params.project_name}/iteration_{iteration}/vina_results",
                                                             dockscore_gt=smiles_2_dockscore_gt)
@@ -913,7 +913,7 @@ def run_subsequent_iterations_mul_gpu(initial_model, molecule_df, dd_cutoff, it0
             labeled_data.extend(new_data)
             print(f'main.py Itearaion {iteration} total train set size {len(labeled_data)}')
             # Load features for newly acquired molecules
-            if config.global_params.target in ['jak2', 'braf', 'parp1','fa7', '5ht1b']:
+            if config.global_params.target in ['jak2', 'braf', 'parp1','fa7', '5ht1b', 'pgk1', 'pgk2']:
                 if config.global_params.dock_pgm == 'vina':
                     vina = QuickVina2GPU(vina_path="/groups/cherkasvgrp/Vina-GPU-2.1/QuickVina2-GPU-2.1/QuickVina2-GPU-2-1", #QuickVina2-GPU-2-1"', # Avoiding global initialization because _teardown deletes tmp dirs
                                         target=config.global_params.target)

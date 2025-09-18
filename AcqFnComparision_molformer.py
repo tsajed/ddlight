@@ -128,9 +128,9 @@ def main(rank, world_size):
 
     # Load data
     target = config.global_params.target
-    if target in ['jak2', 'braf', 'parp1','fa7', '5ht1b']:
+    if target in ['jak2', 'braf', 'parp1','fa7', '5ht1b', 'pgk1', 'pgk2']:
         molecule_df = pickle.load(open(config.global_params.dataset_path,'rb')) # SMILES, ID
-        molecule_df = molecule_df[molecule_df[f'{target}_dockscores']!=0]
+        #molecule_df = molecule_df[molecule_df[f'{target}_dockscores']!=0]
         # molecule_df.drop(columns=["indices"], inplace=True)
         smiles_2_dockscore_gt = None
     elif target == 'mt1r':

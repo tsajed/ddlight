@@ -2,7 +2,7 @@ global_params:
   expt_name: '8FinalDock' #'It will create wandb experiment with this name
   code_path: '/groups/cherkasvgrp/tsajed/ddlight' # path to the ddlight folder, need to change
   project_path: '/groups/cherkasvgrp/tsajed/ddlight' # All output files and results
-  project_name: '8FinalDock' # Multiple ddlight experiments Name of the protein. All run will be saved under there
+  project_name: 'DDU-vina-pgk2' # Multiple ddlight experiments Name of the protein. All run will be saved under there
   dock_pgm: 'vina' #'glide' or 'vina'
   topK : 2000 # At the end of ddrun number of best molecules
   grid_file: '/groups/cherkasvgrp/DeepDocking_Projects/BLAR_2M/glide-grid_blar/glide-grid_blar.zip' # Customize where the grid file.
@@ -10,7 +10,7 @@ global_params:
   dataset_path: 'dataset/Enamine2M_moldf_w_dockscore_5tgt_morgan.pkl' # Path to the dataset of SMILES
   # db_path: '/groups/cherkasvgrp/Student_backup/mkpandey/My_Projects/DDSgroups/Enamine6_75_sparse.db'
   model_architecture: 'advanced_molformer' #'mlpTx' #'molformer' # keep this fixed for now
-  target: 'jak2' #'mpro' #'mt1r' #'mpro' #'2bm2' # key to docking grid, needs to be pdb id
+  target: 'pgk2' #'mpro' #'mt1r' #'mpro' #'2bm2' # key to docking grid, needs to be pdb id
   # descriptors: 'ECFP' no need to use this now
   # descriptor_dir: '/groups/cherkasvgrp/Student_backup/mkpandey/My_Projects/DDSgroups/data/preprocessed/descriptors'
   schrodinger_path: '/groups/cherkasvgrp/schrodinger' # Path to the schrodinger installation; fixed in our lab
@@ -21,8 +21,10 @@ global_params:
 al_params:
   acquisition_function: 'bald' #"unc" # #least_confidence #'random' # "entropy", "least_confidence", "margin", "greedy", "ucb", .
   initial_budget: 20000 #00 #20000 #10000 #1000000 # First round of iterations
+  initial_val_budget: 1000
+  initial_test_budget: 1000
   al_budget: 100 #00 #10000 # 1000 # Number of molecules to acquire at each iteration
-  n_iterations: 2 # Number of active learning iterations
+  n_iterations: 30 # Number of active learning iterations
   model_retrain: False #True # whether to transfer learn or retrain from scratch; comment out in prod
   test_rand_samples: False # At every iteration, do you want to randomly choose molecules to test docking score
   drop_db : True # Iteratively making the dataset more manageable. Drop most informative inactives
@@ -30,7 +32,7 @@ al_params:
 model_hps:
   num_gpus: 51 # Parallel training on num gpus
   num_layers: 6 # Number of layers in the model
-  n_epochs: 1 # Number of epochs to train the model
+  n_epochs: 40 # Number of epochs to train the model
   lr:  0.0001 #0.000001 # 0.0001
   batch_size: 2048 # Batch size for training
   optimizer: "adam" # Optimizer
