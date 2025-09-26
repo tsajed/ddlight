@@ -34,7 +34,7 @@ def get_topK_mols(all_docked_mols, all_virtual_hits, config, topK=1000, dock_tol
     dock_mol_ids = [mol[0] for mol in top_virt_hits]
     dock_smiles_list = [mol[1] for mol in top_virt_hits]
     if config.global_params.dock_pgm =='vina':
-        dock_scores = get_vina_scores_mul_gpu(dock_smiles_list, None, config, num_gpus=config.model_hps.num_gpus, 
+        dock_scores, dock_mols = get_vina_scores_mul_gpu(dock_smiles_list, None, config, num_gpus=config.model_hps.num_gpus, 
                                             output_dir=f"{config.global_params.project_path}/{config.global_params.project_name}/final_docking/",
                                             dockscore_gt=None)
     elif config.global_params.dock_pgm == 'glide':
@@ -43,7 +43,11 @@ def get_topK_mols(all_docked_mols, all_virtual_hits, config, topK=1000, dock_tol
                                 })
         dock_scores, _, _ = get_glide_scores_mul_gpu(batches, 0, config)
                 
-    top_virt_result = [(m,s,d) for m,s,d in zip(dock_mol_ids,dock_smiles_list, dock_scores)]
+    if config.global_params.dock_pgm == 'vina':
+        top_virt_result = [(m,s,d,mol) for m,s,d,mol in zip(dock_mol_ids,dock_smiles_list, dock_scores, dock_mols)]
+    elif config.global_params.dock_pgm == 'glide':
+        top_virt_result = [(m,s,d) for m,s,d in zip(dock_mol_ids,dock_smiles_list, dock_scores)]
+    
     # Combine both and sort by docking score
     combined = result + top_virt_result
     combined_sorted = sorted(combined, key=lambda x: x[2])  # Lower score = better
@@ -52,7 +56,10 @@ def get_topK_mols(all_docked_mols, all_virtual_hits, config, topK=1000, dock_tol
     topK_mols = combined_sorted[:topK]
 
     # Convert to DataFrame
-    df_topK = pd.DataFrame(topK_mols, columns=["mol_id", "smiles", "dock_score"])
+    if config.global_params.dock_pgm == 'vina':
+        df_topK = pd.DataFrame(topK_mols, columns=["mol_id", "smiles", "dock_score", "mol"])
+    elif config.global_params.dock_pgm == 'glide':
+        df_topK = pd.DataFrame(topK_mols, columns=["mol_id", "smiles", "dock_score"])
     
     return df_topK
     

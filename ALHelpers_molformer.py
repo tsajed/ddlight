@@ -262,13 +262,13 @@ def run_first_iteration(config, total_size, molecule_df, used_zinc_ids, smiles_2
         
     else:
         if config.global_params.dock_pgm == 'vina':
-            train_dock_scores = get_vina_scores_mul_gpu(train_data[1], molecule_df, config, num_gpus=config.model_hps.num_gpus, 
+            train_dock_scores, _ = get_vina_scores_mul_gpu(train_data[1], molecule_df, config, num_gpus=config.model_hps.num_gpus, 
                                                                 output_dir=f"{config.global_params.project_path}/{config.global_params.project_name}/iteration_0/vina_results",
                                                                 dockscore_gt=smiles_2_dockscore_gt)
-            val_dock_scores = get_vina_scores_mul_gpu(val_data[1], molecule_df, config, num_gpus=config.model_hps.num_gpus, 
+            val_dock_scores, _ = get_vina_scores_mul_gpu(val_data[1], molecule_df, config, num_gpus=config.model_hps.num_gpus, 
                                                                 output_dir=f"{config.global_params.project_path}/{config.global_params.project_name}/iteration_0/vina_results",
                                                                 dockscore_gt=smiles_2_dockscore_gt)
-            test_dock_scores = get_vina_scores_mul_gpu(test_data[1], molecule_df, config, num_gpus=config.model_hps.num_gpus, 
+            test_dock_scores, _ = get_vina_scores_mul_gpu(test_data[1], molecule_df, config, num_gpus=config.model_hps.num_gpus, 
                                                                 output_dir=f"{config.global_params.project_path}/{config.global_params.project_name}/iteration_0/vina_results",
                                                                 dockscore_gt=smiles_2_dockscore_gt)
         elif config.global_params.dock_pgm == 'glide':
@@ -757,7 +757,7 @@ def get_val_data_from_av_df(molecule_df, used_zinc_ids, tokenizer, config, itera
     elif config.global_params.model_architecture in ('advanced_molformer'):
         dense_fp = tokenizer(smiles_list, padding=True, truncation=True, return_tensors="pt")
     if config.global_params.target in ['jak2', 'braf', 'parp1','fa7', '5ht1b', 'pgk1', 'pgk2']:
-        docking_scores = get_vina_scores_mul_gpu(smiles_list, molecule_df, config, num_gpus=config.model_hps.num_gpus, 
+        docking_scores, _ = get_vina_scores_mul_gpu(smiles_list, molecule_df, config, num_gpus=config.model_hps.num_gpus, 
                                                             output_dir=f"{config.global_params.project_path}/{config.global_params.project_name}/iteration_{iteration}/vina_results",
                                                             dockscore_gt=smiles_2_dockscore_gt)
     if smiles_2_dockscore_gt is not None:
@@ -917,7 +917,7 @@ def run_subsequent_iterations_mul_gpu(initial_model, molecule_df, dd_cutoff, it0
                 if config.global_params.dock_pgm == 'vina':
                     vina = QuickVina2GPU(vina_path="/groups/cherkasvgrp/Vina-GPU-2.1/QuickVina2-GPU-2.1/QuickVina2-GPU-2-1", #QuickVina2-GPU-2-1"', # Avoiding global initialization because _teardown deletes tmp dirs
                                         target=config.global_params.target)
-                    new_docking_scores = get_vina_scores_mul_gpu([item[1] for item in new_data], molecule_df, config, num_gpus=config.model_hps.num_gpus, 
+                    new_docking_scores, _ = get_vina_scores_mul_gpu([item[1] for item in new_data], molecule_df, config, num_gpus=config.model_hps.num_gpus, 
                                                                 output_dir=f"{config.global_params.project_path}/{config.global_params.project_name}/iteration_{iteration}/vina_results",
                                                                 dockscore_gt=smiles_2_dockscore_gt)
                 elif config.global_params.dock_pgm == 'glide':
@@ -1222,7 +1222,7 @@ def run_subsequent_iterations_mul_gpu(initial_model, molecule_df, dd_cutoff, it0
 
             if config.al_params.test_rand_samples:
                 # # Model testing on randomly drawn test samples
-                rand_test_docking_scores = get_vina_scores_mul_gpu([item[1] for item in rand_test_samples], molecule_df, config, num_gpus=config.model_hps.num_gpus, 
+                rand_test_docking_scores, _ = get_vina_scores_mul_gpu([item[1] for item in rand_test_samples], molecule_df, config, num_gpus=config.model_hps.num_gpus, 
                                                             output_dir=f"{config.global_params.project_path}/{config.global_params.project_name}/iteration_{iteration}/vina_results",
                                                             dockscore_gt=smiles_2_dockscore_gt)
                 rand_test_features = molids_2_fps(mol_ids= [item[0] for item in rand_test_samples], molecule_df=molecule_df, fast=True)
@@ -1287,9 +1287,61 @@ def run_subsequent_iterations_mul_gpu(initial_model, molecule_df, dd_cutoff, it0
                            all_virtual_hits=all_virtual_hits, config = config, topK = config.global_params.topK, 
                            dock_tolerance=0.1)
     
-    topkdf.to_csv(f'{iteration_dir}/final_dock_res.csv')
+    cols = [c for c in topkdf.columns if c != "mol"]
+    topkdf.to_csv(f'{iteration_dir}/final_dock_res.csv', columns=cols)
+    write_final_sdf_from_df(topkdf, f'{iteration_dir}/final_dock_mols.sdf')
 
     # clear_iter(os.path.join(config.global_params.project_path, 
     #                                 config.global_params.project_name, f'iteration_{iteration}'),
     #                                 model_clean = False)
     if vina is not None: vina._teardown()
+
+
+from rdkit import Chem
+from rdkit.Chem import SDWriter
+import pandas as pd
+
+def write_final_sdf_from_df(df_topK: pd.DataFrame, sdf_path: str = "final_dock_mols.sdf"):
+    """
+    Write an SDF of docked poses from a DataFrame that has columns:
+      - 'mol_id'     : str/int identifier
+      - 'smiles'     : input SMILES (string)
+      - 'dock_score' : float (e.g., kcal/mol; lower is better)
+      - 'mol'        : RDKit Mol (docked 3D pose)  [Vina branch]
+    Rows with mol=None are skipped. Order is preserved (matches CSV if you save df_topK as-is).
+    """
+    required = {"mol_id", "smiles", "dock_score", "mol"}
+    missing = required - set(df_topK.columns)
+    if missing:
+        print(f"[write_final_sdf_from_df] Missing columns: {sorted(missing)}. Skipping SDF write.")
+        return
+
+    w = SDWriter(sdf_path)
+    n_written, n_skipped = 0, 0
+
+    for _, row in df_topK.iterrows():
+        mol = row["mol"]
+        if mol is None:
+            n_skipped += 1
+            continue
+
+        # Make a shallow copy to avoid mutating original object’s props
+        m = Chem.Mol(mol)
+
+        # Set SD properties (always strings)
+        m.SetProp("mol_id", str(row["mol_id"]))
+        m.SetProp("smiles", str(row["smiles"]))
+        m.SetProp("dock_score", str(row["dock_score"]))
+
+        # Optional: keep name field in SDF as mol_id
+        try:
+            m.SetProp("_Name", str(row["mol_id"]))
+        except Exception:
+            pass
+
+        w.write(m)
+        n_written += 1
+
+    w.close()
+    print(f"Wrote {n_written} molecules to {sdf_path} (skipped {n_skipped} with no pose).")
+

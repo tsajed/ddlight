@@ -24,15 +24,16 @@ def main():
         idx_list = [int(s[0]) for s in splitted_lines]
 
     # Run docking
-    docking_res = vina.dock_mols(smiles_list)
-    idx_dockres_tup = [(idx, dres) for idx, dres in zip( idx_list, docking_res[1])]
+    mols, affinities = vina.dock_mols(smiles_list)
+    idx_dockres_tup = [(idx, dres) for idx, dres in zip( idx_list, affinities)]
+    results = [(idx, aff, mol) for idx, aff, mol in zip(idx_list, affinities, mols)]
     
     print('runvina.py args.output_file ',args.output_file)
     print('runvina.py idx_dockres_tup', idx_dockres_tup)
 
     # Save results
     with open(args.output_file, "wb") as f:
-        pickle.dump(idx_dockres_tup,f )#docking_res[1],f)
+        pickle.dump(results, f)#docking_res[1],f)
 
         # for score in docking_res:
         #     print('score ', score)

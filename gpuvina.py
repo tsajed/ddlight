@@ -810,7 +810,8 @@ python run_vina.py --smiles_file {chunk_file} --output_file {result_file} --gpu_
     # Sort results by index to match the original SMILES order
     # print('dock res ', docking_res)
     docking_res.sort(key=lambda x: x[0])
-    sorted_scores = [score for _, score in docking_res]
+    sorted_scores = [score for _, score, _ in docking_res]
+    sorted_mols = [mol for _, _, mol in docking_res]
     
     assert len(smiles_list) == len(sorted_scores)
-    return sorted_scores
+    return sorted_scores, sorted_mols
