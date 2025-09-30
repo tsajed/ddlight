@@ -35,11 +35,15 @@ def write_job_id(protein, file_path, iteration, job_id, job_name):
 
 def write_conf_script(file, name, num_cpus, sdf_dir):
     """Creates the bash script for running OE Omega."""
+    out_sdf = f"{sdf_dir}/{name}_sdf.sdf"
+    tmp_sdf = f"{sdf_dir}/{name}_sdf.tmp.sdf"
     script_content = f"""#!/bin/bash
 #SBATCH -N 1
 #SBATCH -n 1
 
 oeomega classic -in {file} -out {sdf_dir}/{name}_sdf.sdf -maxconfs 1 -strictstereo false -mpi_np {num_cpus} -log {name}.log -prefix {name} -warts false
+$SCHRODINGER/run /home/tsajed/phd/strip_stereo.py {out_sdf} {tmp_sdf}
+mv {tmp_sdf} {out_sdf}
 """
     script_file = os.path.join(os.path.dirname(sdf_dir),f'{name}_conf.sh')  # sdf_dir.rsplit('/', 2)[0] + '/'    #os.path.join(sdf_dir, f'{name}_conf.sh') #
     print('script_file file ', script_file)
