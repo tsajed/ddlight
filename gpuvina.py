@@ -302,7 +302,7 @@ TARGETS = {
         "size_y": 25.18,
         "size_z": 27.963,
     },
-    "pgk2_cmp_21_h2o": {
+    "pgk2_h2o": {
         "receptor": '/groups/cherkasvgrp/tsajed/dd_targets_pdb/pgk2_cmp21_h2o.pdbqt',
         "center_x": 3.556,
         "center_y": 5.328,

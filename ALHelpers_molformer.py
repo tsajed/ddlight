@@ -115,12 +115,12 @@ def write_inf_helper_script(iteration_dir, config):
     script_content = f"""#!/bin/bash
 #SBATCH --array=0-{config.model_hps.num_gpus-1}   # Array for snum_gpus tasks
 #SBATCH --job-name=||inf
-#SBATCH --partition=gpu-bigmem
+#SBATCH --partition=gpu-bigmem,gpu-long
 #SBATCH --exclude=gn17
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 #SBATCH --gres=gpu:1
-#SBATCH --mem=20000M
+#SBATCH --mem=10000M
 #SBATCH -o {iteration_dir}/inference_%A_%a.out
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate {config.global_params.env_name}
@@ -242,8 +242,8 @@ def run_first_iteration(config, total_size, molecule_df, used_zinc_ids, smiles_2
     elif config.global_params.model_architecture in ('advanced_molformer'):
         fingerprint = False
     train_batch,used_zinc_ids = fetch_random_batch(total_size, molecule_df, used_zinc_ids, init_acq=True, fingerprint=fingerprint, tokenizer = tokenizer)
-    val_batch,used_zinc_ids = fetch_random_batch(50000, molecule_df, used_zinc_ids, init_acq= True, fingerprint=fingerprint, tokenizer=tokenizer)
-    test_batch,used_zinc_ids = fetch_random_batch(50000, molecule_df, used_zinc_ids, init_acq=True, fingerprint=fingerprint, tokenizer=tokenizer)
+    val_batch,used_zinc_ids = fetch_random_batch(config.al_params.initial_val_budget, molecule_df, used_zinc_ids, init_acq= True, fingerprint=fingerprint, tokenizer=tokenizer)
+    test_batch,used_zinc_ids = fetch_random_batch(config.al_params.initial_test_budget, molecule_df, used_zinc_ids, init_acq=True, fingerprint=fingerprint, tokenizer=tokenizer)
     
     print("First Iteration:")
     print(f"Train Batch Size: {len(train_batch[0])}")
@@ -756,7 +756,7 @@ def get_val_data_from_av_df(molecule_df, used_zinc_ids, tokenizer, config, itera
         # dense_fp = tokenizer(smiles_list, padding=True, truncation=True, return_tensors="pt")
     elif config.global_params.model_architecture in ('advanced_molformer'):
         dense_fp = tokenizer(smiles_list, padding=True, truncation=True, return_tensors="pt")
-    if config.global_params.target in ['jak2', 'braf', 'parp1','fa7', '5ht1b', 'pgk1', 'pgk2']:
+    if config.global_params.target in ['jak2', 'braf', 'parp1','fa7', '5ht1b', 'pgk1', 'pgk2', 'pgk2_h2o']:
         docking_scores, _ = get_vina_scores_mul_gpu(smiles_list, molecule_df, config, num_gpus=config.model_hps.num_gpus, 
                                                             output_dir=f"{config.global_params.project_path}/{config.global_params.project_name}/iteration_{iteration}/vina_results",
                                                             dockscore_gt=smiles_2_dockscore_gt)
@@ -868,6 +868,12 @@ def run_subsequent_iterations_mul_gpu(initial_model, molecule_df, dd_cutoff, it0
                     available_df =  molecule_df[~molecule_df['zinc_id'].isin(used_zinc_ids)]
                 else:
                     available_df = molecule_df
+
+                # last iteration uses full available_df; if subset_inference is True, then use 10M or less molecules for inference
+                if config.al_params.subset_inference and iteration != num_iterations - 1:
+                    n = min(1_000_000, len(available_df))
+                    available_df = available_df.sample(n=n, random_state=iteration)
+
                 available_df_numpy_array = available_df.to_numpy()
                 for task_id in range(0, config.model_hps.num_gpus):
                     # Split dataset for parallel processing
@@ -913,7 +919,7 @@ def run_subsequent_iterations_mul_gpu(initial_model, molecule_df, dd_cutoff, it0
             labeled_data.extend(new_data)
             print(f'main.py Itearaion {iteration} total train set size {len(labeled_data)}')
             # Load features for newly acquired molecules
-            if config.global_params.target in ['jak2', 'braf', 'parp1','fa7', '5ht1b', 'pgk1', 'pgk2']:
+            if config.global_params.target in ['jak2', 'braf', 'parp1','fa7', '5ht1b', 'pgk1', 'pgk2', 'pgk2_h2o']:
                 if config.global_params.dock_pgm == 'vina':
                     vina = QuickVina2GPU(vina_path="/groups/cherkasvgrp/Vina-GPU-2.1/QuickVina2-GPU-2.1/QuickVina2-GPU-2-1", #QuickVina2-GPU-2-1"', # Avoiding global initialization because _teardown deletes tmp dirs
                                         target=config.global_params.target)

@@ -19,6 +19,7 @@ import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.distributed as dist
 import pandas as pd
+import dask.dataframe as dd
 
 from ALHelpers_molformer import (load_smiles_dockscore, 
     filter_data_by_dockscore, save_docking_scores, run_first_iteration,
@@ -108,7 +109,27 @@ def train_and_evaluate_model(docking_model, train_loader, val_loader, test_loade
 
     return val_metrics, test_metrics, val_proba, val_labels
 
+def load_smiles_table(path: str):
+    # Treat a single .parquet/.parq file or a directory of parquet parts as Parquet
+    is_parquet = (
+        os.path.isdir(path) or
+        path.lower().endswith(".parquet") or
+        path.lower().endswith(".parq")
+    )
 
+    if is_parquet:
+        # Dask DataFrame (lazy, out-of-core). Only load the two needed columns.
+        ddf = dd.read_parquet(path, columns=["smiles", "zinc_id"])
+        return ddf  # <-- IMPORTANT: return the Dask DataFrame
+    else:
+        # Legacy pickle path (returns pandas DataFrame)
+        df = pd.read_pickle(path)
+        # Be tolerant of old pickles with 'id' instead of 'zinc_id'
+        if "zinc_id" not in df.columns and "id" in df.columns:
+            df = df.rename(columns={"id": "zinc_id"})
+
+        return df
+        
 # Main function
 def main(rank, world_size):
     parser = argparse.ArgumentParser(description="Acq Fn experiment configurations.")
@@ -128,8 +149,8 @@ def main(rank, world_size):
 
     # Load data
     target = config.global_params.target
-    if target in ['jak2', 'braf', 'parp1','fa7', '5ht1b', 'pgk1', 'pgk2']:
-        molecule_df = pickle.load(open(config.global_params.dataset_path,'rb')) # SMILES, ID
+    if target in ['jak2', 'braf', 'parp1','fa7', '5ht1b', 'pgk1', 'pgk2', 'pgk2_h2o']:
+        molecule_df = load_smiles_table(config.global_params.dataset_path) # SMILES, ID
         #molecule_df = molecule_df[molecule_df[f'{target}_dockscores']!=0]
         # molecule_df.drop(columns=["indices"], inplace=True)
         smiles_2_dockscore_gt = None
